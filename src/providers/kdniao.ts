@@ -20,7 +20,9 @@ export class KdniaoProvider implements ExpressProvider {
     trackingNumber: string,
     carrierCode: StandardCarrierCode
   ): Promise<TrackingResult | null> {
-    if (!this.isAvailable()) return null;
+    if (!this.isAvailable()) {
+      throw new Error("快递鸟未配置，需要环境变量 KDNIAO_API_KEY 与 KDNIAO_E_BUSINESS_ID");
+    }
 
     const carrier = CARRIERS[carrierCode];
     const shipperCode = carrier?.kdniaoCode || carrierCode.toUpperCase();
@@ -43,27 +45,29 @@ export class KdniaoProvider implements ExpressProvider {
       DataType: "2",
     }).toString();
 
-    try {
-      const res = await fetch("https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
-        },
-        body,
-      });
+    const res = await fetch("https://api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+      },
+      body,
+    });
 
-      if (!res.ok) return null;
+    if (!res.ok) {
+      throw new Error(`快递鸟 HTTP error ${res.status}`);
+    }
 
-      const json = (await res.json()) as {
-        Success?: boolean;
-        Reason?: string;
-        State?: string;
-        Traces?: Array<{ AcceptTime: string; AcceptStation: string }>;
-      };
+    const json = (await res.json()) as {
+      Success?: boolean;
+      Reason?: string;
+      State?: string;
+      Traces?: Array<{ AcceptTime: string; AcceptStation: string }>;
+    };
 
-      if (!json.Success || !Array.isArray(json.Traces) || json.Traces.length === 0) {
-        return null;
-      }
+    if (!json.Success || !Array.isArray(json.Traces) || json.Traces.length === 0) {
+      const reason = json.Reason?.trim() || "未返回物流轨迹";
+      throw new Error(`快递鸟查询失败: ${reason}`);
+    }
 
       // 快递鸟 Traces 默认是时间正序，我们统一为时间倒序（最新在前）
       const traces = [...json.Traces].reverse();
@@ -100,8 +104,5 @@ export class KdniaoProvider implements ExpressProvider {
         provider: this.name,
         updatedAt: new Date().toISOString(),
       };
-    } catch {
-      return null;
-    }
   }
 }

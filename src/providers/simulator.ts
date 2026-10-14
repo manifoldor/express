@@ -52,15 +52,19 @@ const SAMPLE_ROUTES: CityRoute[] = [
 
 const COURIER_NAMES = ["张强", "李伟", "王建国", "刘洋", "赵亮", "陈杰", "杨洋", "孙晓华"];
 
+/** Present on every simulator result so callers cannot mistake it for live tracking. */
+export const DEMO_DATA_LABEL =
+  "DEMO DATA: fictional tracking events for demonstration only. Not a real parcel status. Enabled only because EXPRESS_DEMO=1.";
+
 /**
  * 内置快递物流沙箱仿真引擎 (Simulator)
- * 为开发测试、沙盒演示及未配置商业 API 时提供高拟真、物理规律严谨的中国城市间物流轨迹生成
+ * 仅在调用方显式设置 EXPRESS_DEMO=1 时使用。每条结果都标注为 demo data，不能当作真实物流。
  */
 export class SimulationProvider implements ExpressProvider {
   public readonly name = "simulator";
 
   public isAvailable(): boolean {
-    return true; // 沙箱仿真器永远就绪
+    return false;
   }
 
   public async track(
@@ -109,7 +113,7 @@ export class SimulationProvider implements ExpressProvider {
     const t0 = now - hours[stage] * 3600 * 1000;
     const cp0: TrackingCheckpoint = {
       time: formatTime(t0),
-      context: `【${route.origin}】快件已由【${route.origin}揽收网点】揽收，揽收员：${courierName} (电话：${courierPhone})`,
+      context: `[DEMO] 【${route.origin}】快件已由【${route.origin}揽收网点】揽收，揽收员：${courierName} (电话：${courierPhone})`,
       status: "PICKED_UP",
       location: route.origin,
       courier: courierName,
@@ -120,7 +124,7 @@ export class SimulationProvider implements ExpressProvider {
     const t1 = t0 + 2.5 * 3600 * 1000;
     const cp1: TrackingCheckpoint = {
       time: formatTime(t1),
-      context: `【${route.origin}】快件已到达【${route.originHub}】，准备发往【${route.destination}】`,
+      context: `[DEMO] 【${route.origin}】快件已到达【${route.originHub}】，准备发往【${route.destination}】`,
       status: "IN_TRANSIT",
       location: route.origin,
     };
@@ -129,7 +133,7 @@ export class SimulationProvider implements ExpressProvider {
     const t2 = t1 + 5.5 * 3600 * 1000;
     const cp2: TrackingCheckpoint = {
       time: formatTime(t2),
-      context: `【${route.originHub}】快件已装车发往【${route.destHub}】，干线集装箱运输中`,
+      context: `[DEMO] 【${route.originHub}】快件已装车发往【${route.destHub}】，干线集装箱运输中`,
       status: "IN_TRANSIT",
       location: route.origin,
     };
@@ -138,7 +142,7 @@ export class SimulationProvider implements ExpressProvider {
     const t3 = t2 + 9.0 * 3600 * 1000;
     const cp3: TrackingCheckpoint = {
       time: formatTime(t3),
-      context: `【${route.destination}】快件已到达【${route.destHub}】，正在进行分拣`,
+      context: `[DEMO] 【${route.destination}】快件已到达【${route.destHub}】，正在进行分拣`,
       status: "IN_TRANSIT",
       location: route.destination,
     };
@@ -147,7 +151,7 @@ export class SimulationProvider implements ExpressProvider {
     const t4 = t3 + 7.5 * 3600 * 1000;
     const cp4: TrackingCheckpoint = {
       time: formatTime(t4),
-      context: `【${route.destination}】快件已到达【${route.destBranch}】，派件员：${courierName} (电话：${courierPhone}) 正在为您派件中，请保持电话通畅`,
+      context: `[DEMO] 【${route.destination}】快件已到达【${route.destBranch}】，派件员：${courierName} (电话：${courierPhone}) 正在为您派件中，请保持电话通畅`,
       status: "OUT_FOR_DELIVERY",
       location: route.destination,
       courier: courierName,
@@ -160,7 +164,7 @@ export class SimulationProvider implements ExpressProvider {
     const signWay = signWays[seed % signWays.length];
     const cp5: TrackingCheckpoint = {
       time: formatTime(t5),
-      context: `【${route.destination}】快件已由【${signWay}】，感谢使用${carrier.name}，期待再次为您服务！如有疑问请拨打服务热线：${carrier.hotline}`,
+      context: `[DEMO] 【${route.destination}】快件已由【${signWay}】，感谢使用${carrier.name}，期待再次为您服务！如有疑问请拨打服务热线：${carrier.hotline}`,
       status: "DELIVERED",
       location: route.destination,
       courier: courierName,
@@ -180,7 +184,7 @@ export class SimulationProvider implements ExpressProvider {
       carrierCode,
       carrierName: carrier.name,
       status,
-      statusText: CarrierDetector.getStatusText(status),
+      statusText: `DEMO DATA · ${CarrierDetector.getStatusText(status)}`,
       isDelivered: status === "DELIVERED",
       origin: route.origin,
       destination: route.destination,
@@ -191,6 +195,8 @@ export class SimulationProvider implements ExpressProvider {
       latestCheckpoint: latest,
       checkpoints: reversed,
       provider: "simulator",
+      demo: true,
+      demoLabel: DEMO_DATA_LABEL,
       updatedAt: new Date().toISOString(),
     };
   }

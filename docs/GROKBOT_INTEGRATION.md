@@ -55,6 +55,7 @@ Grokbot 启动时，按以下优先级查找清单文件：
     "KDNIAO_API_KEY": "${KDNIAO_API_KEY}",
     "KDNIAO_E_BUSINESS_ID": "${KDNIAO_E_BUSINESS_ID}",
     "EXPRESS_DEFAULT_PROVIDER": "${EXPRESS_DEFAULT_PROVIDER}",
+    "EXPRESS_DEMO": "${EXPRESS_DEMO}",
     "EXPRESS_DATA_DIR": "${EXPRESS_DATA_DIR}"
   }
 }
@@ -74,12 +75,13 @@ Grokbot 启动时，按以下优先级查找清单文件：
 ## 3. 在 Grokbot 中使用此插件
 
 ### 3.1 变量配置
-在 Grokbot 插件配置中填写（可选，留空则自动启用高拟真沙箱仿真）：
+在 Grokbot 插件配置中填写。轨迹查询至少需要快递100或快递鸟的一组完整密钥；留空不会启用模拟轨迹：
 - `KUAIDI100_KEY`: 快递100 授权 API Key
 - `KUAIDI100_CUSTOMER`: 快递100 企业商户号
 - `KDNIAO_API_KEY`: 快递鸟 API Key
 - `KDNIAO_E_BUSINESS_ID`: 快递鸟商户 ID
 - `EXPRESS_DEFAULT_PROVIDER`: 引擎模式（`auto`, `kuaidi100`, `kdniao`, `simulator`）
+- `EXPRESS_DEMO`: 设为 `1` 才允许返回标注为 demo data 的虚构轨迹；缺省时缺密钥或查询失败返回错误
 
 ### 3.2 与智能体互动
 直接在 Grokbot 聊天框输入：

@@ -11,6 +11,10 @@ import {
   TrackingResult,
 } from "../types.js";
 
+/** Shown when tracking is requested without a real provider and without EXPRESS_DEMO=1. */
+export const MISSING_TRACKING_CREDENTIALS_MESSAGE =
+  "未配置物流查询密钥，无法查询真实轨迹。请配置快递100环境变量 KUAIDI100_KEY 与 KUAIDI100_CUSTOMER，或快递鸟环境变量 KDNIAO_API_KEY 与 KDNIAO_E_BUSINESS_ID。模拟数据不会自动返回；只有显式设置 EXPRESS_DEMO=1 时才会返回标注为 demo data 的虚构轨迹。";
+
 /**
  * 快递统一跟踪服务核心
  */
@@ -26,6 +30,38 @@ export class ExpressTracker {
     this.kd100Provider = new KuaiDi100Provider(config);
     this.kdniaoProvider = new KdniaoProvider(config);
     this.simulatorProvider = new SimulationProvider();
+  }
+
+  /**
+   * Real providers that can be called for the current engine selection.
+   * Simulator is never included here.
+   */
+  private realProviders(): ExpressProvider[] {
+    const kd100 = this.kd100Provider.isAvailable() ? [this.kd100Provider] : [];
+    const kdniao = this.kdniaoProvider.isAvailable() ? [this.kdniaoProvider] : [];
+    if (this.config.defaultProvider === "kuaidi100") return kd100;
+    if (this.config.defaultProvider === "kdniao") return kdniao;
+    if (this.config.defaultProvider === "simulator") return [];
+    return [...kd100, ...kdniao];
+  }
+
+  /**
+   * Demo tracking is opt-in only (EXPRESS_DEMO=1), and never a fallback after a real lookup fails.
+   */
+  private usesDemoProvider(): boolean {
+    if (this.config.demo !== true) return false;
+    if (this.config.defaultProvider === "simulator") return true;
+    return this.config.defaultProvider === "auto" && this.realProviders().length === 0;
+  }
+
+  /**
+   * Fail closed when neither a real key pair nor explicit demo mode is available.
+   */
+  public ensureTrackingConfigured(): void {
+    if (this.usesDemoProvider()) return;
+    if (this.realProviders().length === 0) {
+      throw new Error(MISSING_TRACKING_CREDENTIALS_MESSAGE);
+    }
   }
 
   /**
@@ -71,6 +107,8 @@ export class ExpressTracker {
       throw new Error("运单号不能为空");
     }
 
+    this.ensureTrackingConfigured();
+
     // 1. 确定快递公司
     let carrierCode: StandardCarrierCode | null = null;
     let carrierName: string = "";
@@ -89,7 +127,6 @@ export class ExpressTracker {
         carrierCode = matches[0].carrier.code;
         carrierName = matches[0].carrier.name;
       } else {
-        // 无法识别时默认顺丰或通用模拟
         carrierCode = "sf";
         carrierName = CARRIERS.sf.name;
       }
@@ -112,45 +149,32 @@ export class ExpressTracker {
       }
     }
 
-    // 3. 构建提供者调用链
-    const providersToTry: ExpressProvider[] = [];
-
-    if (this.config.defaultProvider === "kuaidi100") {
-      providersToTry.push(this.kd100Provider, this.kdniaoProvider, this.simulatorProvider);
-    } else if (this.config.defaultProvider === "kdniao") {
-      providersToTry.push(this.kdniaoProvider, this.kd100Provider, this.simulatorProvider);
-    } else if (this.config.defaultProvider === "simulator") {
-      providersToTry.push(this.simulatorProvider);
-    } else {
-      // auto 模式：有哪个真实密钥就先尝试哪个，无有效密钥则优雅降级到高拟真沙箱
-      if (this.kd100Provider.isAvailable()) {
-        providersToTry.push(this.kd100Provider);
-      }
-      if (this.kdniaoProvider.isAvailable()) {
-        providersToTry.push(this.kdniaoProvider);
-      }
-      providersToTry.push(this.simulatorProvider);
-    }
-
-    // 4. 逐个尝试提供者
+    // 3. 仅在显式演示模式且没有可用真实密钥时使用模拟器；真实查询失败绝不编造轨迹
     let finalResult: TrackingResult | null = null;
 
-    for (const provider of providersToTry) {
-      try {
-        const res = await provider.track(cleanNum, carrierCode);
-        if (res && res.checkpoints.length > 0) {
-          finalResult = res;
-          break;
-        }
-      } catch {
-        // 当前提供者失败，自动切换下一个
-        continue;
-      }
-    }
-
-    if (!finalResult) {
-      // 最终兜底由沙箱生成，确保服务高可用
+    if (this.usesDemoProvider()) {
       finalResult = await this.simulatorProvider.track(cleanNum, carrierCode);
+    } else {
+      const providersToTry = this.realProviders();
+      const errors: string[] = [];
+
+      for (const provider of providersToTry) {
+        try {
+          const res = await provider.track(cleanNum, carrierCode);
+          if (res && res.checkpoints.length > 0 && res.demo !== true && res.provider !== "simulator") {
+            finalResult = res;
+            break;
+          }
+          errors.push(`${provider.name}: 未返回物流轨迹`);
+        } catch (err) {
+          errors.push(err instanceof Error ? err.message : String(err));
+        }
+      }
+
+      if (!finalResult) {
+        const detail = errors.length > 0 ? errors.join("；") : "未返回物流轨迹";
+        throw new Error(`物流查询失败：${detail}`);
+      }
     }
 
     if (!finalResult) {
@@ -172,26 +196,7 @@ export class ExpressTracker {
   public async batchTrack(
     items: Array<{ trackingNumber: string; carrier?: string }>
   ): Promise<TrackingResult[]> {
-    const promises = items.map(item =>
-      this.track(item.trackingNumber, item.carrier).catch(err => ({
-        trackingNumber: item.trackingNumber,
-        carrierCode: (item.carrier as StandardCarrierCode) || "sf",
-        carrierName: item.carrier || "未知快递",
-        status: "EXCEPTION" as const,
-        statusText: "查询失败",
-        isDelivered: false,
-        checkpoints: [
-          {
-            time: new Date().toISOString(),
-            context: `查询异常: ${err instanceof Error ? err.message : String(err)}`,
-            status: "EXCEPTION" as const,
-          },
-        ],
-        provider: "none",
-        updatedAt: new Date().toISOString(),
-      }))
-    );
-
-    return Promise.all(promises);
+    this.ensureTrackingConfigured();
+    return Promise.all(items.map(item => this.track(item.trackingNumber, item.carrier)));
   }
 }

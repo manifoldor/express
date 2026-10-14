@@ -49,9 +49,11 @@ export class KuaiDi100Provider implements ExpressProvider {
     trackingNumber: string,
     carrierCode: StandardCarrierCode
   ): Promise<TrackingResult | null> {
-    if (!this.isAvailable()) return null;
+      if (!this.isAvailable()) {
+        throw new Error("快递100未配置，需要环境变量 KUAIDI100_KEY 与 KUAIDI100_CUSTOMER");
+      }
 
-    const carrier = CARRIERS[carrierCode];
+      const carrier = CARRIERS[carrierCode];
     const comCode = carrier?.kuaidi100Code || carrierCode;
 
     const key = this.config.kuaidi100Key!;
@@ -71,29 +73,29 @@ export class KuaiDi100Provider implements ExpressProvider {
       param,
     }).toString();
 
-    try {
-      const res = await fetch("https://poll.kuaidi100.com/poll/query.do", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body,
-      });
+    const res = await fetch("https://poll.kuaidi100.com/poll/query.do", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body,
+    });
 
-      if (!res.ok) {
-        throw new Error(`KuaiDi100 HTTP error ${res.status}`);
-      }
+    if (!res.ok) {
+      throw new Error(`快递100 HTTP error ${res.status}`);
+    }
 
-      const data = (await res.json()) as {
-        status?: string;
-        message?: string;
-        state?: string;
-        data?: Array<{ time: string; context: string; ftime?: string }>;
-      };
+    const data = (await res.json()) as {
+      status?: string;
+      message?: string;
+      state?: string;
+      data?: Array<{ time: string; context: string; ftime?: string }>;
+    };
 
-      if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
-        return null;
-      }
+    if (!data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      const reason = data.message?.trim() || "未返回物流轨迹";
+      throw new Error(`快递100查询失败: ${reason}`);
+    }
 
       const checkpoints: TrackingCheckpoint[] = data.data.map(item => {
         const contact = CarrierDetector.extractCourier(item.context);
@@ -127,8 +129,5 @@ export class KuaiDi100Provider implements ExpressProvider {
         provider: this.name,
         updatedAt: new Date().toISOString(),
       };
-    } catch {
-      return null;
-    }
   }
 }

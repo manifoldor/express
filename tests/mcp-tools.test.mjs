@@ -28,6 +28,7 @@ test("MCP ToolExecutor - execute express_track and list_carriers", async () => {
 
   const config = {
     defaultProvider: "simulator",
+    demo: true,
     dataDir: TEST_DIR,
     cacheTtlMs: 1000,
   };
@@ -51,6 +52,8 @@ test("MCP ToolExecutor - execute express_track and list_carriers", async () => {
     tracking_number: "SF1428571428571",
   });
   assert.equal(trackResult.carrierCode, "sf");
+  assert.equal(trackResult.demo, true);
+  assert.match(trackResult.demoLabel, /DEMO DATA/);
   assert.ok(trackResult.checkpoints.length > 0);
 
   // 4. express_add_watchlist

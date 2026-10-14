@@ -9,7 +9,7 @@
       "name": "express",
       "displayName": "China Express Logistics & Tracking",
       "source": "./",
-      "description": "Track Chinese express parcels (SF, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon): auto-detect the carrier from a tracking number, fetch normalized tracking via your own Kuaidi100 or KDNiao API key, and keep a local watchlist with update polling. Without a key it returns clearly-labelled simulated demo data. Unofficial; not affiliated with any carrier or API vendor.",
+      "description": "Track Chinese express parcels (SF, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon): auto-detect the carrier from a tracking number, fetch normalized tracking via your own Kuaidi100 or KDNiao API key, and keep a local watchlist with update polling. Tracking requires KUAIDI100_KEY + KUAIDI100_CUSTOMER or KDNIAO_API_KEY + KDNIAO_E_BUSINESS_ID. Missing keys and failed lookups return an error instead of invented events. Demo data is returned only when EXPRESS_DEMO=1 and is labeled as demo data. Unofficial; not affiliated with any carrier or API vendor.",
       "version": "1.0.0",
       "author": {
         "name": "yishan"

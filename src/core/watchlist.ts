@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { resolveCarrier } from "../constants/carriers.js";
 import {
   ExpressPluginConfig,
@@ -55,6 +55,7 @@ export class WatchlistManager {
       lastPolledAt: new Date().toISOString(),
     };
     try {
+      mkdirSync(dirname(this.filePath), { recursive: true });
       writeFileSync(this.filePath, JSON.stringify(data, null, 2), "utf-8");
     } catch (err) {
       process.stderr.write(`[express:watchlist] Failed to save watchlist: ${String(err)}\n`);
@@ -153,22 +154,23 @@ export class WatchlistManager {
    * 轮询所有监控包裹并比对状态变更
    */
   public async pollUpdates(tracker: ExpressTracker): Promise<WatchlistPollReport> {
+    tracker.ensureTrackingConfigured();
     const entries = this.list();
     const changes: WatchlistChange[] = [];
     let changedCount = 0;
 
-    for (const entry of entries) {
-      // 已签收超过7天的不再频繁轮询
-      if (entry.isDelivered) {
-        changes.push({
-          entry,
-          hasChange: false,
-          changeType: "none",
-        });
-        continue;
-      }
+    try {
+      for (const entry of entries) {
+        // 已签收超过7天的不再频繁轮询
+        if (entry.isDelivered) {
+          changes.push({
+            entry,
+            hasChange: false,
+            changeType: "none",
+          });
+          continue;
+        }
 
-      try {
         const latestResult = await tracker.track(entry.trackingNumber, entry.carrierCode);
         const oldStatus = entry.status;
         const newStatus = latestResult.status;
@@ -190,7 +192,6 @@ export class WatchlistManager {
 
         if (hasChange) {
           changedCount++;
-          // 更新 entry
           entry.status = newStatus;
           entry.statusText = latestResult.statusText;
           entry.isDelivered = latestResult.isDelivered;
@@ -208,17 +209,11 @@ export class WatchlistManager {
           newStatus,
           latestCheckpoint: latestResult.latestCheckpoint,
         });
-      } catch {
-        changes.push({
-          entry,
-          hasChange: false,
-          changeType: "none",
-        });
       }
-    }
-
-    if (changedCount > 0) {
-      this.save();
+    } finally {
+      if (changedCount > 0) {
+        this.save();
+      }
     }
 
     return {

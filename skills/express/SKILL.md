@@ -96,13 +96,15 @@ alwaysApply: false
 
 ---
 
-## 5. 多源查询与沙箱回退保障
+## 5. 多源查询（无密钥不编造轨迹）
 
 1. **企业商业 API**：
-   - 配置 `KUAIDI100_KEY` & `KUAIDI100_CUSTOMER` 时优先走快递100云接口。
-   - 配置 `KDNIAO_API_KEY` & `KDNIAO_E_BUSINESS_ID` 时启用快递鸟即时查询。
-2. **开放接口与无密回退**：
-   - 支持主流平台公开轻量接口查询。
-3. **内置物流沙箱仿真器 (Simulator)**：
-   - 当在无外网 API 凭证或开发调试场景下，自动启动物流轨迹仿真器。
-   - 能够基于真实的中国城市物流路由（如：深圳 -> 武汉 -> 北京 -> 海淀区中关村网点）生成符合物理规律的真实轨迹模拟数据，保障 Agent 体验不中断。
+   - 配置 `KUAIDI100_KEY` 与 `KUAIDI100_CUSTOMER` 时走快递100云接口。
+   - 配置 `KDNIAO_API_KEY` 与 `KDNIAO_E_BUSINESS_ID` 时走快递鸟即时查询。
+2. **未配置密钥或真实查询失败**：
+   - `express_track`、`express_batch_track`、`express_poll_updates` 返回明确错误，并提示配置上述环境变量。
+   - 不得把错误说成物流轨迹，也不得编造揽收、运输或签收节点。
+3. **演示数据**：
+   - 只有环境变量 `EXPRESS_DEMO=1` 时才可能返回仿真轨迹。
+   - 这类结果必须告知用户这是 demo data（`demo: true`，`demoLabel` 以 `DEMO DATA` 开头），不能当作真实物流状态。
+4. **单号识别与快递公司列表**不需要 API 密钥。

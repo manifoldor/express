@@ -16,10 +16,10 @@ flowchart TD
     
     Tracker --> Cache["本地缓存 (内存 Map + TTL)"]
     
-    Tracker --> Providers{"提供者调用链 (按优先级尝试)"}
-    Providers -->|优先| KD100["快递100 (KuaiDi100Provider)"]
-    Providers -->|备选| KDNIAO["快递鸟 (KdniaoProvider)"]
-    Providers -->|兜底/离线| Sim["城市物流仿真沙箱 (SimulationProvider)"]
+    Tracker --> Providers{"真实物流提供者"}
+    Providers -->|已配置密钥| KD100["快递100 (KuaiDi100Provider)"]
+    Providers -->|已配置密钥| KDNIAO["快递鸟 (KdniaoProvider)"]
+    Tracker -->|仅 EXPRESS_DEMO=1| Sim["演示数据 (SimulationProvider)"]
     
     Tracker --> Normalizer["状态归一化 & 快递员信息提取"]
     Normalizer --> Output["标准化物流响应 (TrackingResult)"]
@@ -91,10 +91,11 @@ stateDiagram-v2
       "status": "IN_TRANSIT"
     },
     "checkpoints": [ ... ],
-    "provider": "simulator",
+    "provider": "kuaidi100",
     "updatedAt": "2026-10-14T14:45:00.000Z"
   }
   ```
+  未配置 `KUAIDI100_KEY`+`KUAIDI100_CUSTOMER` 或 `KDNIAO_API_KEY`+`KDNIAO_E_BUSINESS_ID` 时，工具返回错误而不是轨迹。真实查询失败同样返回错误。仅当 `EXPRESS_DEMO=1` 时，`provider` 为 `simulator`，并带 `demo: true` 与 `demoLabel`（以 `DEMO DATA` 开头）。
 
 ### 3.2 `express_detect_carrier`
 - **功能**：识别运单号可能属于的中国快递公司及置信度评分。

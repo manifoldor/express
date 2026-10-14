@@ -72,6 +72,10 @@ export interface TrackingResult {
   provider: string;
   updatedAt: string;
   cached?: boolean;
+  /** True only for explicit EXPRESS_DEMO=1 simulator results. */
+  demo?: boolean;
+  /** Human-readable label present on every demo result. */
+  demoLabel?: string;
 }
 
 export interface WatchlistEntry {
@@ -112,6 +116,8 @@ export interface ExpressPluginConfig {
   kdniaoApiKey?: string;
   kdniaoEBusinessId?: string;
   defaultProvider: "auto" | "kuaidi100" | "kdniao" | "simulator";
+  /** Explicit opt-in for fictional demo tracking. Set only when EXPRESS_DEMO=1. */
+  demo: boolean;
   dataDir: string;
   cacheTtlMs: number;
 }

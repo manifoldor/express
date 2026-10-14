@@ -75,8 +75,13 @@ async function main() {
 
     case "poll": {
       process.stdout.write("🔄 正在轮询检查监控清单中所有包裹的最新轨迹...\n");
-      const report = await watchlist.pollUpdates(tracker);
-      process.stdout.write(formatPollReport(report));
+      try {
+        const report = await watchlist.pollUpdates(tracker);
+        process.stdout.write(formatPollReport(report));
+      } catch (err) {
+        process.stderr.write(`❌ 轮询失败: ${err instanceof Error ? err.message : String(err)}\n`);
+        process.exit(1);
+      }
       break;
     }
 

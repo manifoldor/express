@@ -3,7 +3,7 @@
   "name": "express",
   "displayName": "China Express Logistics & Tracking",
   "version": "1.0.0",
-  "description": "Track Chinese express parcels (SF, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon): auto-detect the carrier from a tracking number, fetch normalized tracking via your own Kuaidi100 or KDNiao API key, and keep a local watchlist with update polling. Without a key it returns clearly-labelled simulated demo data. Unofficial; not affiliated with any carrier or API vendor.",
+  "description": "Track Chinese express parcels (SF, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon): auto-detect the carrier from a tracking number, fetch normalized tracking via your own Kuaidi100 or KDNiao API key, and keep a local watchlist with update polling. Tracking requires KUAIDI100_KEY + KUAIDI100_CUSTOMER or KDNIAO_API_KEY + KDNIAO_E_BUSINESS_ID. Missing keys and failed lookups return an error instead of invented events. Demo data is returned only when EXPRESS_DEMO=1 and is labeled as demo data. Unofficial; not affiliated with any carrier or API vendor.",
   "author": {
     "name": "yishan"
   },
@@ -62,8 +62,14 @@
       "EXPRESS_DEFAULT_PROVIDER": {
         "type": "string",
         "title": "默认物流查询引擎",
-        "description": "物流查询引擎选择 (auto, kuaidi100, kdniao, simulator)",
+        "description": "物流查询引擎选择 (auto, kuaidi100, kdniao, simulator)。simulator 仅在 EXPRESS_DEMO=1 时生效",
         "default": "auto"
+      },
+      "EXPRESS_DEMO": {
+        "type": "string",
+        "title": "演示数据开关",
+        "description": "设为 1 时才返回标注为 demo data 的虚构轨迹。未设置时，缺密钥或查询失败会返回错误，不会编造轨迹",
+        "default": ""
       },
       "EXPRESS_DATA_DIR": {
         "type": "string",

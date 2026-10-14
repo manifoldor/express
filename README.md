@@ -8,17 +8,17 @@ An MCP plugin for Grok Bot (Cursor Agent Plugins format) that tracks parcels fro
 - Fetches tracking events through **your own** Kuaidi100 or KDNiao API account and normalizes them into 7 statuses (`PENDING`, `PICKED_UP`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `EXCEPTION`, `EXPIRED`)
 - Keeps a local watchlist (stored on disk, default `~/.grokbot/express`) and reports new checkpoints when polled
 
-> **Important: simulated data without an API key.** If no Kuaidi100/KDNiao credentials are configured, or if the real providers fail, the plugin falls back to a built-in simulator that generates **fictional demo tracking events**. Such results carry `"provider": "simulator"` and must not be treated as real parcel status. For real tracking, configure a key and check that `provider` is `kuaidi100` or `kdniao`.
+> **Tracking requires your own API key.** `express_track`, `express_batch_track` and `express_poll_updates` call Kuaidi100 or KDNiao and return that provider's data. If neither `KUAIDI100_KEY` + `KUAIDI100_CUSTOMER` nor `KDNIAO_API_KEY` + `KDNIAO_E_BUSINESS_ID` is set, those tools return an error that names the variables. If a real lookup fails, the error is returned as-is. The plugin does not invent tracking events. Carrier detection (`express_detect_carrier`) and `express_list_carriers` stay keyless. Fictional demo events exist only when you set `EXPRESS_DEMO=1`; every demo result has `demo: true`, `provider: "simulator"` and a `demoLabel` that starts with `DEMO DATA`.
 
 ## Install
 
 - **Grok Bot plugin marketplace:** search for `express` and install.
-- **Manual (MCP):** requires Node.js 20+.
+- **Manual (MCP):** requires Node.js 20+. The repo includes a built `dist/`, so a clone runs without a compile step:
   ```bash
   git clone https://github.com/manifoldor/express.git && cd express
-  npm ci && npm run build
+  node dist/mcp/index.js
   ```
-  Then register the server from `.mcp.json` (`node dist/mcp/index.js`) in your MCP client, passing the environment variables below.
+  Register the server from `.mcp.json` (`node dist/mcp/index.js`) in your MCP client, passing the environment variables below. Rebuild from source with `npm ci && npm run build` when you change TypeScript.
 
 ## Tools
 
@@ -37,9 +37,9 @@ An MCP plugin for Grok Bot (Cursor Agent Plugins format) that tracks parcels fro
 | --- | --- | --- |
 | [Kuaidi100](https://api.kuaidi100.com/) | `poll.kuaidi100.com/poll/query.do` (tracking), `www.kuaidi100.com/autonumber` (courier guess) | Yes for tracking: `KUAIDI100_KEY`, `KUAIDI100_CUSTOMER` |
 | [KDNiao](https://www.kdniao.com/) | `api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx` | Yes: `KDNIAO_API_KEY`, `KDNIAO_E_BUSINESS_ID` |
-| Built-in simulator | none (offline) | No — fictional demo data only |
+| Built-in simulator | none (offline) | Opt-in only: `EXPRESS_DEMO=1`. Every result is labeled demo data |
 
-The plugin does not call courier companies' own APIs directly. Set credentials as environment variables (plugin variables in Grok Bot, or a local `.env` copied from `.env.example`). `EXPRESS_DEFAULT_PROVIDER` selects `auto` (default), `kuaidi100`, `kdniao` or `simulator`. Never commit keys; `.env` is git-ignored.
+The plugin does not call courier companies' own APIs directly. Set credentials as environment variables (plugin variables in Grok Bot, or a local `.env` copied from `.env.example`). `EXPRESS_DEFAULT_PROVIDER` selects `auto` (default), `kuaidi100`, `kdniao` or `simulator`. `simulator` does nothing unless `EXPRESS_DEMO=1`. In `auto` mode with no keys, `EXPRESS_DEMO=1` is the only way to get demo events; if a configured real provider fails, you get the error, not demo events. Never commit keys; `.env` is git-ignored.
 
 ## Disclaimer
 
@@ -53,7 +53,7 @@ Tracking data comes from third-party aggregators and may be delayed, incomplete 
 
 ## 中文说明
 
-中国主流快递（顺丰、中通、圆通、申通、韵达、极兔、邮政 EMS、京东、德邦）单号识别、物流轨迹查询和本地包裹监控插件。真实轨迹需要你自己的**快递100**或**快递鸟** API 账号；**没有配置 Key（或接口失败）时，会返回内置模拟器生成的虚构演示轨迹**，结果中 `provider` 为 `simulator`，不能当作真实物流状态。物流数据来自第三方，可能延迟或不准确。本插件非任何快递公司或接口平台官方产品。
+中国主流快递（顺丰、中通、圆通、申通、韵达、极兔、邮政 EMS、京东、德邦）单号识别、物流轨迹查询和本地包裹监控插件。`express_track`、`express_batch_track`、`express_poll_updates` 查询真实轨迹时必须配置**快递100**（`KUAIDI100_KEY` 与 `KUAIDI100_CUSTOMER`）或**快递鸟**（`KDNIAO_API_KEY` 与 `KDNIAO_E_BUSINESS_ID`）。未配置密钥，或真实接口失败时，返回明确错误，**不会编造轨迹**。单号识别和快递公司列表不需要密钥。虚构演示数据只有在显式设置 `EXPRESS_DEMO=1` 时才会返回，且每条结果都带 `demo: true` 与以 `DEMO DATA` 开头的 `demoLabel`。物流数据来自第三方，可能延迟或不准确。本插件非任何快递公司或接口平台官方产品。仓库已包含编译好的 `dist/`，克隆后可直接用 `node dist/mcp/index.js` 启动。
 
 以下为详细中文文档。
 
@@ -68,9 +68,11 @@ Tracking data comes from third-party aggregators and may be delayed, incomplete 
 - 📞 **快递员与派送网点信息提取**：智能提取派件员姓名、联系电话与网点名称，方便用户一键呼叫催件或修改派送时间。
 - 📋 **长期包裹追踪监控清单 (Watchlist)**：支持将单号添加至本地监控清单（可附加备注，如“机械键盘”、“生鲜水果”），支持多单号批量轮询与动态增量变更通知。
 - 🔌 **标准 Model Context Protocol (MCP)**：提供标准 JSON-RPC 2.0 stdio MCP 服务，智能体可随时自动调用 8 大高可用物流工具。
-- 🛡️ **多源架构与沙箱仿真保障 (High Availability)**：
-  - 企业商业通道：支持无缝接入**快递100**、**快递鸟**高并发 API。
-  - 内置沙箱仿真器：在开发环境、无外网秘钥或离线测试时自动启用基于中国真实城市物流路由的高拟真仿真引擎，此时返回的是**虚构的演示数据**（`provider: "simulator"`），不是真实物流。
+- 🛡️ **真实查询，失败即报错**：
+  - 企业商业通道：接入**快递100**、**快递鸟** API。至少配置其中一组完整密钥后才会发起轨迹查询。
+  - 未配置 `KUAIDI100_KEY` + `KUAIDI100_CUSTOMER` 或 `KDNIAO_API_KEY` + `KDNIAO_E_BUSINESS_ID` 时，轨迹查询、批量查询和监控轮询返回错误并写明上述环境变量。
+  - 真实接口失败时原样返回错误，不会用模拟轨迹填补。
+  - 演示模式：仅当 `EXPRESS_DEMO=1` 时启用内置仿真器，结果标明 `demo: true`、`provider: "simulator"` 和 `DEMO DATA` 标签，不能当作真实物流。
 
 ---
 
@@ -194,19 +196,23 @@ npm run mcp
 
 ## ⚙️ 环境变量与配置
 
-在 `.env` 或运行时环境变量中进行配置（非必填，未配置时自动降级到模拟器，返回的是虚构演示数据）：
+在 `.env` 或运行时环境变量中配置。轨迹查询至少需要快递100或快递鸟中的一组完整密钥；未配置时不会自动降级到模拟器。
 
 ```bash
-# 快递100 (可选)
+# 快递100（轨迹查询需要 KEY 与 CUSTOMER 同时配置）
 KUAIDI100_KEY=your_kuaidi100_key
 KUAIDI100_CUSTOMER=your_customer_id
 
-# 快递鸟 (可选)
+# 快递鸟（轨迹查询需要 API_KEY 与 E_BUSINESS_ID 同时配置）
 KDNIAO_API_KEY=your_kdniao_api_key
 KDNIAO_E_BUSINESS_ID=your_ebusiness_id
 
 # 查询引擎模式: auto (默认) | kuaidi100 | kdniao | simulator
+# simulator 只有在 EXPRESS_DEMO=1 时才会返回数据
 EXPRESS_DEFAULT_PROVIDER=auto
+
+# 显式开启虚构演示数据。未设置或非 1 时，缺密钥和查询失败都返回错误
+EXPRESS_DEMO=1
 
 # 监控数据保存目录 (默认: ~/.grokbot/express)
 EXPRESS_DATA_DIR=~/.grokbot/express

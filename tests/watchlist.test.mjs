@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
+import { join } from "node:path";
 import { ExpressTracker } from "../dist/core/tracker.js";
 import { WatchlistManager } from "../dist/core/watchlist.js";
 
@@ -13,6 +14,7 @@ test("WatchlistManager - add, list, remove and poll", async () => {
 
   const config = {
     defaultProvider: "simulator",
+    demo: true,
     dataDir: TEST_DIR,
     cacheTtlMs: 1000,
   };
@@ -42,5 +44,63 @@ test("WatchlistManager - add, list, remove and poll", async () => {
 
   try {
     rmSync(TEST_DIR, { recursive: true, force: true });
+  } catch {}
+});
+
+test("WatchlistManager - poll without credentials returns a clear error", async () => {
+  const dir = "./.test-watchlist-nokey";
+  try {
+    rmSync(dir, { recursive: true, force: true });
+  } catch {}
+
+  const tracker = new ExpressTracker({
+    defaultProvider: "auto",
+    demo: false,
+    dataDir: dir,
+    cacheTtlMs: 1000,
+  });
+  const watchlist = new WatchlistManager({
+    defaultProvider: "auto",
+    demo: false,
+    dataDir: dir,
+    cacheTtlMs: 1000,
+  });
+
+  await assert.rejects(
+    () => watchlist.pollUpdates(tracker),
+    err => {
+      assert.match(err.message, /KUAIDI100_KEY/);
+      assert.match(err.message, /KUAIDI100_CUSTOMER/);
+      assert.match(err.message, /KDNIAO_API_KEY/);
+      assert.match(err.message, /KDNIAO_E_BUSINESS_ID/);
+      return true;
+    }
+  );
+
+  try {
+    rmSync(dir, { recursive: true, force: true });
+  } catch {}
+});
+
+test("WatchlistManager - save recreates a missing data directory", async () => {
+  const dir = "./.test-watchlist-enoent";
+  try {
+    rmSync(dir, { recursive: true, force: true });
+  } catch {}
+
+  const watchlist = new WatchlistManager({
+    defaultProvider: "auto",
+    demo: false,
+    dataDir: dir,
+    cacheTtlMs: 1000,
+  });
+  rmSync(dir, { recursive: true, force: true });
+
+  const entry = await watchlist.add("SF1428571428571", "目录重建", "顺丰");
+  assert.equal(entry.trackingNumber, "SF1428571428571");
+  assert.equal(existsSync(join(dir, "watchlist.json")), true);
+
+  try {
+    rmSync(dir, { recursive: true, force: true });
   } catch {}
 });

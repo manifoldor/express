@@ -39,6 +39,11 @@ export function formatTrackingResult(res: TrackingResult): string {
 
   lines.push("");
   lines.push(`${COLORS.bold}📦 快递物流轨迹详情${COLORS.reset}`);
+  if (res.demo) {
+    lines.push(
+      `${COLORS.bgYellow} ${res.demoLabel || "DEMO DATA: fictional tracking events, not a real parcel status."} ${COLORS.reset}`
+    );
+  }
   lines.push(divider);
   lines.push(`运单号码: ${COLORS.bold}${res.trackingNumber}${COLORS.reset}`);
   lines.push(`快递公司: ${COLORS.cyan}${res.carrierName} (${res.carrierCode.toUpperCase()})${COLORS.reset}`);

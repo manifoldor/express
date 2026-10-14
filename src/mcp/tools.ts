@@ -20,7 +20,7 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
     {
       name: "express_track",
       description:
-        "查询快递物流轨迹与最新状态。支持顺丰、中通、圆通、申通、韵达、极兔、邮政EMS、京东、德邦等主流快递。若未指定快递公司，系统将自动识别。",
+        "查询快递物流轨迹与最新状态。支持顺丰、中通、圆通、申通、韵达、极兔、邮政EMS、京东、德邦等主流快递。若未指定快递公司，系统将自动识别。需要快递100（KUAIDI100_KEY 与 KUAIDI100_CUSTOMER）或快递鸟（KDNIAO_API_KEY 与 KDNIAO_E_BUSINESS_ID）；未配置密钥时返回错误，不会编造轨迹。仅当 EXPRESS_DEMO=1 时返回标注为 demo data 的演示数据。",
       inputSchema: {
         type: "object",
         properties: {
@@ -107,7 +107,7 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
     {
       name: "express_poll_updates",
       description:
-        "主动轮询检查监控清单中所有包裹的最新轨迹，并返回有状态流转或新检查点的包裹变更提醒报告。",
+        "主动轮询检查监控清单中所有包裹的最新轨迹，并返回有状态流转或新检查点的包裹变更提醒报告。需要快递100或快递鸟密钥（KUAIDI100_KEY、KUAIDI100_CUSTOMER 或 KDNIAO_API_KEY、KDNIAO_E_BUSINESS_ID）；未配置时返回错误。真实查询失败会返回错误，不会编造轨迹。",
       inputSchema: {
         type: "object",
         properties: {},
@@ -115,7 +115,8 @@ export function getMcpToolDefinitions(): McpToolDefinition[] {
     },
     {
       name: "express_batch_track",
-      description: "批量一次性查询多个快递单号的最新状态与物流轨迹。",
+      description:
+        "批量一次性查询多个快递单号的最新状态与物流轨迹。需要快递100（KUAIDI100_KEY 与 KUAIDI100_CUSTOMER）或快递鸟（KDNIAO_API_KEY 与 KDNIAO_E_BUSINESS_ID）。未配置密钥或真实查询失败时返回错误，不会编造轨迹。",
       inputSchema: {
         type: "object",
         properties: {

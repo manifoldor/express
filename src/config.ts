@@ -22,6 +22,7 @@ export function loadConfig(): ExpressPluginConfig {
     kdniaoApiKey: process.env.KDNIAO_API_KEY?.trim() || undefined,
     kdniaoEBusinessId: process.env.KDNIAO_E_BUSINESS_ID?.trim() || undefined,
     defaultProvider,
+    demo: process.env.EXPRESS_DEMO === "1",
     dataDir: process.env.EXPRESS_DATA_DIR?.trim() || defaultDataDir,
     cacheTtlMs: 5 * 60 * 1000, // 5 分钟轨迹缓存
   };
