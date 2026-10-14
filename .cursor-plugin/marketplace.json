@@ -1,0 +1,47 @@
+{
+  "name": "grokbot-marketplace",
+  "owner": {
+    "name": "manifoldor",
+    "email": "ethan@example.com"
+  },
+  "description": "Grokbot Official & Community Plugin Marketplace",
+  "plugins": [
+    {
+      "name": "express",
+      "displayName": "China Express Logistics & Tracking",
+      "source": "./",
+      "description": "中国主流快递公司物流查询与跟踪插件，支持顺丰、中通、圆通、申通、韵达、极兔、邮政EMS、京东、德邦等单号自动识别、实时轨迹跟踪、主动监控轮询与 MCP 工具调用能力。",
+      "version": "1.0.0",
+      "author": {
+        "name": "Ethan",
+        "email": "ethan@example.com"
+      },
+      "publisher": "manifoldor",
+      "license": "MIT",
+      "homepage": "https://github.com/manifoldor/express",
+      "repository": "https://github.com/manifoldor/express.git",
+      "category": "Logistics",
+      "tags": [
+        "express",
+        "kuaidi",
+        "logistics",
+        "tracking",
+        "sf-express",
+        "zto",
+        "yto",
+        "sto",
+        "yunda",
+        "jtexpress",
+        "ems",
+        "jd",
+        "mcp"
+      ],
+      "skills": ["skills/express"],
+      "agents": ["agents/express-agent.md"],
+      "commands": ["commands/express.md"],
+      "rules": ["rules/express-rules.md"],
+      "hooks": "hooks/hooks.json",
+      "mcpServers": ".mcp.json"
+    }
+  ]
+}
