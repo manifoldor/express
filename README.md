@@ -1,13 +1,64 @@
-# Grokbot Express Logistics Plugin (`express`)
+# express — China parcel tracking plugin
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue.svg)](https://www.typescriptlang.org/)
-[![MCP Spec](https://img.shields.io/badge/MCP-2024--11--05-orange.svg)](https://modelcontextprotocol.io/)
 
-基于 **Grokbot / Cursor Plugin 官方规范**打造的中国主流快递包裹查询、智能单号推导与物流监控插件。为智能体（Agent）赋予实时快递追踪、状态机归一化、多单号长期监控以及异常件贴心预警的全套能力。
+An MCP plugin for Grok Bot (Cursor Agent Plugins format) that tracks parcels from major Chinese couriers: SF Express, ZTO, YTO, STO, Yunda, J&T, China Post EMS, JD Logistics and Deppon.
+
+- Auto-detects the courier from the tracking-number format
+- Fetches tracking events through **your own** Kuaidi100 or KDNiao API account and normalizes them into 7 statuses (`PENDING`, `PICKED_UP`, `IN_TRANSIT`, `OUT_FOR_DELIVERY`, `DELIVERED`, `EXCEPTION`, `EXPIRED`)
+- Keeps a local watchlist (stored on disk, default `~/.grokbot/express`) and reports new checkpoints when polled
+
+> **Important: simulated data without an API key.** If no Kuaidi100/KDNiao credentials are configured, or if the real providers fail, the plugin falls back to a built-in simulator that generates **fictional demo tracking events**. Such results carry `"provider": "simulator"` and must not be treated as real parcel status. For real tracking, configure a key and check that `provider` is `kuaidi100` or `kdniao`.
+
+## Install
+
+- **Grok Bot plugin marketplace:** search for `express` and install.
+- **Manual (MCP):** requires Node.js 20+.
+  ```bash
+  git clone https://github.com/manifoldor/express.git && cd express
+  npm ci && npm run build
+  ```
+  Then register the server from `.mcp.json` (`node dist/mcp/index.js`) in your MCP client, passing the environment variables below.
+
+## Tools
+
+| Tool | Purpose |
+| --- | --- |
+| `express_track` | Tracking events for one number (`tracking_number`, optional `carrier`) |
+| `express_batch_track` | Status of several numbers (`tracking_numbers`) |
+| `express_detect_carrier` | Guess the courier from the number format, with confidence |
+| `express_list_carriers` | Supported couriers, codes, hotlines, websites |
+| `express_add_watchlist` / `express_get_watchlist` / `express_remove_watchlist` | Manage the local watchlist |
+| `express_poll_updates` | Check watched parcels for new checkpoints |
+
+## Data sources and API keys
+
+| Source | Endpoint | Needs credentials |
+| --- | --- | --- |
+| [Kuaidi100](https://api.kuaidi100.com/) | `poll.kuaidi100.com/poll/query.do` (tracking), `www.kuaidi100.com/autonumber` (courier guess) | Yes for tracking: `KUAIDI100_KEY`, `KUAIDI100_CUSTOMER` |
+| [KDNiao](https://www.kdniao.com/) | `api.kdniao.com/Ebusiness/EbusinessOrderHandle.aspx` | Yes: `KDNIAO_API_KEY`, `KDNIAO_E_BUSINESS_ID` |
+| Built-in simulator | none (offline) | No — fictional demo data only |
+
+The plugin does not call courier companies' own APIs directly. Set credentials as environment variables (plugin variables in Grok Bot, or a local `.env` copied from `.env.example`). `EXPRESS_DEFAULT_PROVIDER` selects `auto` (default), `kuaidi100`, `kdniao` or `simulator`. Never commit keys; `.env` is git-ignored.
+
+## Disclaimer
+
+Tracking data comes from third-party aggregators and may be delayed, incomplete or wrong; check with the courier for anything important. Courier names are used only to identify carriers. This project is unofficial and not affiliated with any courier, Kuaidi100 or KDNiao.
+
+## License
+
+[MIT](LICENSE) © 2026 Yishan Lin
 
 ---
+
+## 中文说明
+
+中国主流快递（顺丰、中通、圆通、申通、韵达、极兔、邮政 EMS、京东、德邦）单号识别、物流轨迹查询和本地包裹监控插件。真实轨迹需要你自己的**快递100**或**快递鸟** API 账号；**没有配置 Key（或接口失败）时，会返回内置模拟器生成的虚构演示轨迹**，结果中 `provider` 为 `simulator`，不能当作真实物流状态。物流数据来自第三方，可能延迟或不准确。本插件非任何快递公司或接口平台官方产品。
+
+以下为详细中文文档。
+
+---
+
 
 ## ✨ 核心特性
 
@@ -19,7 +70,7 @@
 - 🔌 **标准 Model Context Protocol (MCP)**：提供标准 JSON-RPC 2.0 stdio MCP 服务，智能体可随时自动调用 8 大高可用物流工具。
 - 🛡️ **多源架构与沙箱仿真保障 (High Availability)**：
   - 企业商业通道：支持无缝接入**快递100**、**快递鸟**高并发 API。
-  - 内置沙箱仿真器：在开发环境、无外网秘钥或离线测试时自动启用基于中国真实城市物流路由的高拟真仿真引擎，确保体验平滑不中断。
+  - 内置沙箱仿真器：在开发环境、无外网秘钥或离线测试时自动启用基于中国真实城市物流路由的高拟真仿真引擎，此时返回的是**虚构的演示数据**（`provider: "simulator"`），不是真实物流。
 
 ---
 
@@ -143,7 +194,7 @@ npm run mcp
 
 ## ⚙️ 环境变量与配置
 
-在 `.env` 或运行时环境变量中进行配置（非必填，未配置时自动降级到沙箱模式）：
+在 `.env` 或运行时环境变量中进行配置（非必填，未配置时自动降级到模拟器，返回的是虚构演示数据）：
 
 ```bash
 # 快递100 (可选)
@@ -180,4 +231,4 @@ npm run check
 
 ## 📄 授权协议
 
-[MIT License](LICENSE) © 2026 Ethan
+[MIT License](LICENSE) © 2026 Yishan Lin

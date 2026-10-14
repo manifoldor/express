@@ -3,15 +3,14 @@
   "name": "express",
   "displayName": "China Express Logistics & Tracking",
   "version": "1.0.0",
-  "description": "中国主流快递公司物流查询与跟踪插件，支持顺丰、中通、圆通、申通、韵达、极兔、邮政EMS、京东、德邦等单号自动识别、实时轨迹跟踪、主动监控轮询与 MCP 工具调用能力。",
+  "description": "Track Chinese express parcels (SF, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon): auto-detect the carrier from a tracking number, fetch normalized tracking via your own Kuaidi100 or KDNiao API key, and keep a local watchlist with update polling. Without a key it returns clearly-labelled simulated demo data. Unofficial; not affiliated with any carrier or API vendor.",
   "author": {
-    "name": "Ethan",
-    "email": "ethan@example.com"
+    "name": "yishan"
   },
   "publisher": "manifoldor",
   "license": "MIT",
-  "homepage": "https://github.com/manifoldor/express",
-  "repository": "https://github.com/manifoldor/express.git",
+  "homepage": "https://sibox.org",
+  "repository": "https://github.com/manifoldor/express",
   "keywords": [
     "express",
     "kuaidi",
@@ -28,7 +27,9 @@
     "jd",
     "mcp"
   ],
-  "capabilities": ["canvas"],
+  "capabilities": [
+    "canvas"
+  ],
   "minClientVersions": {
     "cursor": "0.18.0",
     "sand": "0.18.0"
@@ -71,10 +72,19 @@
       }
     }
   },
-  "skills": ["skills/express"],
-  "agents": ["agents/express-agent.md"],
-  "commands": ["commands/express.md"],
-  "rules": ["rules/express-rules.md"],
+  "skills": [
+    "skills/express"
+  ],
+  "agents": [
+    "agents/express-agent.md"
+  ],
+  "commands": [
+    "commands/express.md"
+  ],
+  "rules": [
+    "rules/express-rules.md"
+  ],
   "hooks": "hooks/hooks.json",
-  "mcpServers": ".mcp.json"
+  "mcpServers": ".mcp.json",
+  "logo": "assets/logo.png"
 }
