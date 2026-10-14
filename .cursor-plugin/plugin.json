@@ -1,0 +1,80 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "express",
+  "displayName": "China Express Logistics & Tracking",
+  "version": "1.0.0",
+  "description": "中国主流快递公司物流查询与跟踪插件，支持顺丰、中通、圆通、申通、韵达、极兔、邮政EMS、京东、德邦等单号自动识别、实时轨迹跟踪、主动监控轮询与 MCP 工具调用能力。",
+  "author": {
+    "name": "Ethan",
+    "email": "ethan@example.com"
+  },
+  "publisher": "manifoldor",
+  "license": "MIT",
+  "homepage": "https://github.com/manifoldor/express",
+  "repository": "https://github.com/manifoldor/express.git",
+  "keywords": [
+    "express",
+    "kuaidi",
+    "logistics",
+    "tracking",
+    "grokbot",
+    "sf-express",
+    "zto",
+    "yto",
+    "sto",
+    "yunda",
+    "jtexpress",
+    "ems",
+    "jd",
+    "mcp"
+  ],
+  "capabilities": ["canvas"],
+  "minClientVersions": {
+    "cursor": "0.18.0",
+    "sand": "0.18.0"
+  },
+  "variables": {
+    "type": "object",
+    "properties": {
+      "KUAIDI100_KEY": {
+        "type": "string",
+        "title": "快递100 Key",
+        "description": "快递100 平台授权 Key（可选，用于高并发高精度查询）",
+        "writeOnly": true
+      },
+      "KUAIDI100_CUSTOMER": {
+        "type": "string",
+        "title": "快递100 Customer ID",
+        "description": "快递100 企业商户编号（可选）"
+      },
+      "KDNIAO_API_KEY": {
+        "type": "string",
+        "title": "快递鸟 API Key",
+        "description": "快递鸟平台 API Key（可选）",
+        "writeOnly": true
+      },
+      "KDNIAO_E_BUSINESS_ID": {
+        "type": "string",
+        "title": "快递鸟 EBusinessID",
+        "description": "快递鸟用户商户 ID（可选）"
+      },
+      "EXPRESS_DEFAULT_PROVIDER": {
+        "type": "string",
+        "title": "默认物流查询引擎",
+        "description": "物流查询引擎选择 (auto, kuaidi100, kdniao, simulator)",
+        "default": "auto"
+      },
+      "EXPRESS_DATA_DIR": {
+        "type": "string",
+        "title": "数据持久化目录",
+        "description": "包裹监控清单和物流历史缓存保存目录（默认 ~/.grokbot/express）"
+      }
+    }
+  },
+  "skills": ["skills/express"],
+  "agents": ["agents/express-agent.md"],
+  "commands": ["commands/express.md"],
+  "rules": ["rules/express-rules.md"],
+  "hooks": "hooks/hooks.json",
+  "mcpServers": ".mcp.json"
+}

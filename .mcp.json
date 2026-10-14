@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "express": {
+      "command": "node",
+      "args": ["dist/mcp/index.js"],
+      "env": {
+        "KUAIDI100_KEY": "${KUAIDI100_KEY}",
+        "KUAIDI100_CUSTOMER": "${KUAIDI100_CUSTOMER}",
+        "KDNIAO_API_KEY": "${KDNIAO_API_KEY}",
+        "KDNIAO_E_BUSINESS_ID": "${KDNIAO_E_BUSINESS_ID}",
+        "EXPRESS_DEFAULT_PROVIDER": "${EXPRESS_DEFAULT_PROVIDER}",
+        "EXPRESS_DATA_DIR": "${EXPRESS_DATA_DIR}"
+      }
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "name": "grokbot-plugin-express",
+  "version": "1.0.0",
+  "description": "Express parcel query and tracking plugin for Grokbot Agent, supporting SF Express, ZTO, YTO, STO, Yunda, J&T, EMS, JD, Deppon and more.",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "grokbot-express": "dist/cli/index.js",
+    "express-mcp": "dist/mcp/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:manifoldor/express.git"
+  },
+  "homepage": "https://github.com/manifoldor/express#readme",
+  "bugs": {
+    "url": "https://github.com/manifoldor/express/issues"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node dist/cli/index.js",
+    "mcp": "node dist/mcp/index.js",
+    "test": "node --test tests/*.test.mjs",
+    "check": "tsc --noEmit && npm run test"
+  },
+  "keywords": [
+    "grokbot",
+    "grokbot-plugin",
+    "express",
+    "kuaidi",
+    "logistics",
+    "tracking",
+    "sf-express",
+    "zto",
+    "yto",
+    "sto",
+    "yunda",
+    "jtexpress",
+    "ems",
+    "jd",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "author": "Ethan",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.0"
+  }
+}
